@@ -11,3 +11,5 @@ sentence-transformers
 python-dotenv
 fastapi
 uvicorn
+langchain-groq
+dotenv
