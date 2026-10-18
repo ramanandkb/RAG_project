@@ -1,26 +1,36 @@
-from pathlib import Path
 
+from pathlib import Path
 from langchain_community.document_loaders import PyPDFLoader
 
 
-def load_pdf(file_path: str):
+def load_pdfs(folder_path):
+    folder = Path(folder_path).resolve()
 
-    path = Path(file_path)
+    if not folder.is_dir():
+        raise FileNotFoundError(f"Folder not found: {folder}")
 
-    if not path.exists():
-        raise FileNotFoundError(
-            f"Document not found: {file_path}"
-        )
+    pdf_files = sorted(folder.glob("*.pdf"))
 
-    if path.suffix.lower() != ".pdf":
-        raise ValueError(
-            "Only PDF files are currently supported."
-        )
+    if not pdf_files:
+        raise FileNotFoundError(f"No PDF files found in: {folder}")
 
-    loader = PyPDFLoader(str(path))
+    all_documents = []
 
-    documents = loader.load()
+    for pdf_path in pdf_files:
+        documents = PyPDFLoader(str(pdf_path)).load()
 
-    print(f"Loaded {len(documents)} pages from {path.name}")
+        for page in documents:
+            page.metadata["source"] = pdf_path.name
+            page.metadata["document_name"] = pdf_path.name
+            page.metadata["page_number"] = (
+                int(page.metadata.get("page", 0)) + 1
+            )
 
-    return documents
+        all_documents.extend(documents)
+
+        print(f"Loaded {len(documents)} pages from {pdf_path.name}")
+
+    print(f"\nTotal PDFs loaded: {len(pdf_files)}")
+    print(f"Total pages loaded: {len(all_documents)}")
+
+    return all_documents
